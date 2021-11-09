@@ -90,6 +90,7 @@ CreateDriver::CreateDriver(ros::NodeHandle& nh)
   mode_msg_.header.frame_id = base_frame_;
   bumper_msg_.header.frame_id = base_frame_;
   charging_state_msg_.header.frame_id = base_frame_;
+  battery_state_msg_.header.frame_id = base_frame_;
   tf_odom_.header.frame_id = odom_frame_;
   tf_odom_.child_frame_id = base_frame_;
   odom_msg_.header.frame_id = odom_frame_;
@@ -135,6 +136,7 @@ CreateDriver::CreateDriver(ros::NodeHandle& nh)
   charge_ratio_pub_ = nh.advertise<std_msgs::Float32>("battery/charge_ratio", 30);
   capacity_pub_ = nh.advertise<std_msgs::Float32>("battery/capacity", 30);
   temperature_pub_ = nh.advertise<std_msgs::Int16>("battery/temperature", 30);
+  battery_state_pub_ = nh.advertise<sensor_msgs::BatteryState>("battery/battery_state", 30);
   charging_state_pub_ = nh.advertise<create_msgs::ChargingState>("battery/charging_state", 30);
   omni_char_pub_ = nh.advertise<std_msgs::UInt16>("ir_omni", 30);
   mode_pub_ = nh.advertise<create_msgs::Mode>("mode", 30);
@@ -507,29 +509,53 @@ void CreateDriver::publishBatteryInfo()
 
   const create::ChargingState charging_state = robot_->getChargingState();
   charging_state_msg_.header.stamp = ros::Time::now();
+  battery_state_msg_.header.stamp = ros::Time::now();
+  battery_state_msg_.voltage = robot_->getVoltage();
+  battery_state_msg_.temperature = robot_->getTemperature();
+  battery_state_msg_.current = robot_->getCurrent();
+  battery_state_msg_.charge = robot_->getBatteryCharge();
+  battery_state_msg_.capacity = robot_->getBatteryCapacity();
+  battery_state_msg_.percentage = robot_->getBatteryCharge() / robot_->getBatteryCapacity();
+  battery_state_msg_.power_supply_technology = sensor_msgs::BatteryState::POWER_SUPPLY_TECHNOLOGY_UNKNOWN;
+  battery_state_msg_.present = true;
+  battery_state_msg_.design_capacity = NAN;
+  battery_state_msg_.location = "/0";
+  battery_state_msg_.serial_number = "";
   switch (charging_state)
   {
     case create::CHARGE_NONE:
       charging_state_msg_.state = charging_state_msg_.CHARGE_NONE;
+      battery_state_msg_.power_supply_status = sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_DISCHARGING;
+      battery_state_msg_.power_supply_health = sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_GOOD;
       break;
     case create::CHARGE_RECONDITION:
       charging_state_msg_.state = charging_state_msg_.CHARGE_RECONDITION;
+      battery_state_msg_.power_supply_status = sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_CHARGING;
+      battery_state_msg_.power_supply_health = sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_GOOD;
       break;
 
     case create::CHARGE_FULL:
       charging_state_msg_.state = charging_state_msg_.CHARGE_FULL;
+      battery_state_msg_.power_supply_status = sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_FULL;
+      battery_state_msg_.power_supply_health = sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_GOOD;
       break;
 
     case create::CHARGE_TRICKLE:
       charging_state_msg_.state = charging_state_msg_.CHARGE_TRICKLE;
+      battery_state_msg_.power_supply_status = sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_CHARGING;
+      battery_state_msg_.power_supply_health = sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_GOOD;
       break;
 
     case create::CHARGE_WAITING:
       charging_state_msg_.state = charging_state_msg_.CHARGE_WAITING;
+      battery_state_msg_.power_supply_status = sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_NOT_CHARGING  ;
+      battery_state_msg_.power_supply_health = sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_GOOD;
       break;
 
     case create::CHARGE_FAULT:
       charging_state_msg_.state = charging_state_msg_.CHARGE_FAULT;
+      battery_state_msg_.power_supply_status = sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_NOT_CHARGING;
+      battery_state_msg_.power_supply_health = sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_UNSPEC_FAILURE;
       break;
   }
   charging_state_pub_.publish(charging_state_msg_);

@@ -41,6 +41,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <sensor_msgs/JointState.h>
+#include <sensor_msgs/BatteryState.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float32.h>
@@ -50,6 +51,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <tf2_ros/transform_broadcaster.h>
 
 #include <string>
+#include <cmath>
 
 static const double COVARIANCE[36] = {1e-5, 1e-5, 0.0,  0.0,  0.0,  1e-5,  // NOLINT(whitespace/braces)
                                       1e-5, 1e-5, 0.0,  0.0,  0.0,  1e-5,
@@ -98,6 +100,7 @@ private:
   ros::Publisher bumper_pub_;
   ros::Publisher wheeldrop_pub_;
   ros::Publisher wheel_joint_pub_;
+  ros::Publisher battery_state_pub_;
 
   tf2_ros::TransformBroadcaster tf_broadcaster_;
 
@@ -105,6 +108,7 @@ private:
 
   create_msgs::Mode mode_msg_;
   create_msgs::ChargingState charging_state_msg_;
+  sensor_msgs::BatteryState battery_state_msg_;
   create_msgs::Bumper bumper_msg_;
   nav_msgs::Odometry odom_msg_;
   geometry_msgs::TransformStamped tf_odom_;
