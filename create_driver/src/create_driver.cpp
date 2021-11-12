@@ -511,7 +511,9 @@ void CreateDriver::publishBatteryInfo()
   charging_state_msg_.header.stamp = ros::Time::now();
   battery_state_msg_.header.stamp = ros::Time::now();
   battery_state_msg_.voltage = robot_->getVoltage();
+#if ROS_VERSION_MAJOR == 1 && ROS_VERSION_MINOR >= 15
   battery_state_msg_.temperature = robot_->getTemperature();
+#endif
   battery_state_msg_.current = robot_->getCurrent();
   battery_state_msg_.charge = robot_->getBatteryCharge();
   battery_state_msg_.capacity = robot_->getBatteryCapacity();
